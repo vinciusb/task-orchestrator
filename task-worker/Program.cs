@@ -1,15 +1,10 @@
-﻿class Program {
-	static void Main(string[] args) {
-		if(args.Length < 2) {
-			Console.WriteLine("Haven't passed enough arguments");
-			return;
-		}
+﻿using CommandLine;
 
-		int numberOfProcessUnits = Int32.Parse(args[1]);
-		if(numberOfProcessUnits < 1) {
-			Console.WriteLine("Not enough process units");
-			return;
-		}
+class Program {
+	static async Task Main(string[] args) {
+		var options = Parser.Default
+						.ParseArguments<Cli.WorkerOptions>(args)
+						.WithNotParsed((_) => throw new ArgumentException("CLI arguments parser failed.")).Value;
 
 		try {
 		}

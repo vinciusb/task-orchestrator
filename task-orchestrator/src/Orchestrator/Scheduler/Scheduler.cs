@@ -7,7 +7,7 @@ namespace TaskOrchestrator.Orchestrator.Scheduler {
 
 		public Scheduler() { }
 
-		public static List<Schedule> Schedule(TaskGraph graph, int NPU) {
+		public static async Task<List<Schedule>> Schedule(TaskGraph graph, int NPU) {
 			SortedSet<Schedule> schedules = new(Enumerable.Range(0, NPU).Select(i => new Schedule(i)), new ScheduleComparer());
 			Dictionary<int, Schedule> idToScheduleMap = schedules.ToDictionary(s => s.Id, s => s);
 			Dictionary<int, int> howManyDepCompleted = new(graph.NumberOfJobs * 2);

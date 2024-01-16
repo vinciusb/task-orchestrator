@@ -1,29 +1,31 @@
-﻿using TaskOrchestrator.Orchestrator;
+﻿using CommandLine;
+using TaskOrchestrator.Communication.Cluster;
+using TaskOrchestrator.Communication.Cluster.Node;
+using TaskOrchestrator.Orchestrator;
 using TaskOrchestrator.Orchestrator.Graph;
 using TaskOrchestrator.Orchestrator.Scheduler;
 
-namespace task_orchestrator;
-
 class Program {
-	static void Main(string[] args) {
-		if(args.Length < 2) {
-			Console.WriteLine("Haven't passed enough arguments");
-			return;
-		}
-
-		int numberOfProcessUnits = Int32.Parse(args[1]);
-		if(numberOfProcessUnits < 1) {
-			Console.WriteLine("Not enough process units");
-			return;
-		}
+	static async Task Main(string[] args) {
+		var options = Parser.Default
+						.ParseArguments<Cli.OrchestratorOptions>(args)
+						.WithNotParsed((_) => throw new ArgumentException("CLI arguments parser failed.")).Value;
 
 		try {
-			string dotText = File.ReadAllText(args[0]);
+			string dotText = File.ReadAllText(options.DotFile);
 			var taskGraph = new TaskGraph(dotText);
 
-			var schedules = Scheduler.Schedule(taskGraph, numberOfProcessUnits);
+			var schedules = Scheduler.Schedule(taskGraph, options.NumberOfProcessUnits);
 
-			var orchestrator = new Orchestrator(schedules);
+			ICluster cluster = new ClusterBuilder()
+									.SetNumberOfNodes(options.NumberOfProcessUnits)
+									.SetOrchestratorDefaultPort(options.DefaultPort)
+									.SetCurrentNodeType(NodeType.Orchestrator)
+									.Build();
+
+			cluster.Connect();
+
+			var orchestrator = new Orchestrator(await schedules);
 			orchestrator.OrchestrateTasks();
 		}
 		catch(Exception ex) {
