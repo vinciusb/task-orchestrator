@@ -11,7 +11,8 @@ class Program {
 		var options = Parser.Default
 					.ParseArguments<Cli.OrchestratorOptions>(args)
 					.WithNotParsed((_) => throw new ArgumentException("CLI arguments parser failed.")).Value;
-
+		var logger = LoggerFactory.Create(builder => builder.AddConsole())
+															.CreateLogger("Orchestrator");
 		try {
 			string dotText = File.ReadAllText(options.DotFile);
 			var taskGraph = new TaskGraph(dotText);
@@ -22,8 +23,7 @@ class Program {
 									.SetNumberOfNodes(options.NumberOfProcessUnits)
 									.SetOrchestratorDefaultPort(options.DefaultPort)
 									.SetCurrentNodeType(NodeType.Orchestrator)
-									.SetLogger(LoggerFactory.Create(builder => builder.AddConsole())
-															.CreateLogger("Orchestrator"))
+									.SetLogger(logger)
 									.Build();
 
 			cluster.Connect();
@@ -32,7 +32,8 @@ class Program {
 			orchestrator.OrchestrateTasks();
 		}
 		catch(Exception ex) {
-			Console.WriteLine(ex.Message);
+			logger.LogError(ex, "== Error ==");
+			// Se algum erro acontecer, fechar todos sockets caso tenha alguma conexão ja criada
 		}
 	}
 }

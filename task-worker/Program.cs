@@ -8,20 +8,21 @@ class Program {
 		var options = Parser.Default
 						.ParseArguments<Cli.WorkerOptions>(args)
 						.WithNotParsed((_) => throw new ArgumentException("CLI arguments parser failed.")).Value;
-
+		var logger = LoggerFactory.Create(builder => builder.AddConsole())
+														.CreateLogger("Worker");
 		try {
 			ICluster cluster = new ClusterBuilder()
 						.SetOrchestratorDefaultPort(options.DefaultPort)
 						.SetCurrentNodeType(NodeType.Worker)
 						.SetOrchestratorAddress(options.IpAdress)
-						.SetLogger(LoggerFactory.Create(builder => builder.AddConsole())
-												.CreateLogger("Worker"))
+						.SetLogger(logger)
 						.Build();
 
 			cluster.Connect();
 		}
 		catch(Exception ex) {
-			Console.WriteLine(ex.Message);
+			logger.LogError(ex, "== Error ==");
+			// Fazer com conexões perdidas levem aqui
 		}
 	}
 }
